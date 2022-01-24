@@ -29,7 +29,8 @@ namespace xLearn {
 	{
 		float val[8];
 		memcpy(val, &var, sizeof(val));
-		printf("%f \n",  val[0]+ val[1]+ val[2]+ val[3]);
+		printf("%f %f %f %f %f %f %f %f \n",  val[0], val[1], val[2], val[3],
+                val[4], val[5], val[6], val[7]);
 	}
 
 // y = sum( (V_i*V_j)(x_i * x_j) )
@@ -40,10 +41,10 @@ real_t FMScore::CalcScore(const SparseRow* row,
   /*********************************************************
    *  linear term and bias term                            *
    *********************************************************/
-   std::cout << "norm : "<< norm <<std::endl; 
+   std::cout << "norm : "<< norm <<std::endl;
   real_t sqrt_norm = sqrt(norm);
-  
-  std::cout << "sqrt norm : "<< sqrt_norm <<std::endl; 
+
+  std::cout << "sqrt norm : "<< sqrt_norm <<std::endl;
   real_t *w = model.GetParameter_w();
   index_t num_feat = model.GetNumFeature();
   real_t t = 0;
@@ -54,20 +55,21 @@ real_t FMScore::CalcScore(const SparseRow* row,
     // To avoid unseen feature in Prediction
     if (feat_id >= num_feat) continue;
 
-	std::cout << "feat_val : " << iter->feat_val << " , " <<   w[feat_id*aux_size] <<"\n";	
+	std::cout << "feat_val : " << iter->feat_val << " , " <<   w[feat_id*aux_size] <<"\n";
     t += (iter->feat_val * w[feat_id*aux_size] * sqrt_norm);
   }
 
-  
+
   std::cout << "t : " << t << "\n" ;
-  	   
+
   // bias
   w = model.GetParameter_b();
   t += w[0];
 
-  
-  std::cout << "add bias " << w[0] << ", and t : " << t << "\n" ;
-  
+
+  std::cout << "add bias " << w[0] << "\n" ;
+  std::cout << " t : " << t << "\n" ;
+
 
   /*********************************************************
    *  latent factor                                        *
@@ -78,24 +80,31 @@ real_t FMScore::CalcScore(const SparseRow* row,
   real_t* s = sv.data();
 
 
+  // fill the XMMs value
   for (SparseRow::const_iterator iter = row->begin();
        iter != row->end(); ++iter) {
     index_t j1 = iter->feat_id;
     // To avoid unseen feature in Prediction
     if (j1 >= num_feat) continue;
     real_t v1 = iter->feat_val;
-	std::cout << "v1 " << v1 << "\n"; 
     real_t *w = model.GetParameter_v() + j1 * align0;
+    //
+	//std::cout << "w " << *w << "\n";
+
     __m128 XMMv = _mm_set1_ps(v1*norm);
+
+    // inner product
     for (index_t d = 0; d < aligned_k; d += kAlign) {
       __m128 XMMs = _mm_load_ps(s+d);
       __m128 const XMMw = _mm_load_ps(w+d);
+	  //std::cout << "XMMW\n";
+      //print128_num(XMMw);
       XMMs = _mm_add_ps(XMMs, _mm_mul_ps(XMMw, XMMv));
       _mm_store_ps(s+d, XMMs);
-	  std::cout << "s " << s[0] << "\n" ;
-	  
-	    std::cout << "xmms\n";
-	  print128_num(XMMs);	   
+	  //std::cout << "s " << s[0] << "\n" ;
+
+	  //std::cout << "XMMS\n";
+      //print128_num(XMMs);
     }
   }
 
@@ -107,8 +116,8 @@ real_t FMScore::CalcScore(const SparseRow* row,
     if (j1 >= num_feat) continue;
     real_t v1 = iter->feat_val;
     real_t *w = model.GetParameter_v() + j1 * align0;
-	
-	
+
+
     __m128 XMMv = _mm_set1_ps(v1*norm);
     for (index_t d = 0; d < aligned_k; d += kAlign) {
       __m128 XMMs = _mm_load_ps(s+d);
@@ -121,29 +130,30 @@ real_t FMScore::CalcScore(const SparseRow* row,
 
 	  XMMt = _mm_add_ps(XMMt,
          _mm_mul_ps(XMMwv, _mm_sub_ps(XMMs, XMMwv)));
-	  	
+
 	}
-	std::cout << "XMMT 1\n" ;
-	print128_num(XMMt);
+	//std::cout << "XMMT 1\n" ;
+	//print128_num(XMMt);
   }
 
   XMMt = _mm_hadd_ps(XMMt, XMMt);
   XMMt = _mm_hadd_ps(XMMt, XMMt);
-  std::cout << "XMMT 2\n" ;
-  print128_num(XMMt);
+  //std::cout << "XMMT 2\n" ;
+  //print128_num(XMMt);
 
   real_t t_all;
   _mm_store_ss(&t_all, XMMt);
   t_all *= 0.5;
 
   std::cout << "t_all : " << t_all << "\n" ;
-  
 
+
+  std::cout << "fm score : " << std::to_string(t) << " + " << std::to_string(t_all)   ;
   t_all += t;
+  std::cout << t_all << "\n";
 
 
-  std::cout << "fm score : " << t_all << "\n" ;
-  
+
   return t_all;
 }
 
@@ -161,7 +171,7 @@ void FMScore::CalcGrad(const SparseRow* row,
   else if (opt_type_.compare("adagrad") == 0) {
     this->calc_grad_adagrad(row, model, pg, norm);
   }
-  // Using ftrl 
+  // Using ftrl
   else if (opt_type_.compare("ftrl") == 0) {
     this->calc_grad_ftrl(row, model, pg, norm);
   }
@@ -177,7 +187,7 @@ void FMScore::calc_grad_sgd(const SparseRow* row,
                             real_t norm) {
   /*********************************************************
    *  linear term and bias term                            *
-   *********************************************************/  
+   *********************************************************/
   real_t sqrt_norm = sqrt(norm);
   real_t *w = model.GetParameter_w();
   index_t num_feat = model.GetNumFeature();
@@ -199,7 +209,7 @@ void FMScore::calc_grad_sgd(const SparseRow* row,
    *  latent factor                                        *
    *********************************************************/
   index_t aligned_k = model.get_aligned_k();
-  index_t align0 = model.get_aligned_k() * 
+  index_t align0 = model.get_aligned_k() *
                    model.GetAuxiliarySize();
   __m128 XMMpg = _mm_set1_ps(pg);
   __m128 XMMlr = _mm_set1_ps(learning_rate_);
@@ -275,7 +285,7 @@ void FMScore::calc_grad_adagrad(const SparseRow* row,
    *  latent factor                                        *
    *********************************************************/
   index_t aligned_k = model.get_aligned_k();
-  index_t align0 = model.get_aligned_k() * 
+  index_t align0 = model.get_aligned_k() *
                    model.GetAuxiliarySize();
   __m128 XMMpg = _mm_set1_ps(pg);
   __m128 XMMlr = _mm_set1_ps(learning_rate_);
@@ -342,7 +352,7 @@ void FMScore::calc_grad_ftrl(const SparseRow* row,
     real_t &wl = w[feat_id*3];
     real_t &wlg = w[feat_id*3+1];
     real_t &wlz = w[feat_id*3+2];
-    real_t g = lambda_2_*wl+pg*iter->feat_val*sqrt_norm; 
+    real_t g = lambda_2_*wl+pg*iter->feat_val*sqrt_norm;
     real_t old_wlg = wlg;
     wlg += g*g;
     real_t sigma = (sqrt(wlg)-sqrt(old_wlg)) / alpha_;
@@ -351,8 +361,8 @@ void FMScore::calc_grad_ftrl(const SparseRow* row,
     if (sign*wlz <= lambda_1_) {
       wl = 0;
     } else {
-      wl = (sign*lambda_1_-wlz) / 
-           ((beta_ + sqrt(wlg)) / 
+      wl = (sign*lambda_1_-wlz) /
+           ((beta_ + sqrt(wlg)) /
             alpha_ + lambda_2_);
     }
   }
@@ -370,15 +380,15 @@ void FMScore::calc_grad_ftrl(const SparseRow* row,
   if (sign*wbz <= lambda_1_) {
     wb = 0;
   } else {
-    wb = (sign*lambda_1_-wbz) / 
-         ((beta_ + sqrt(wbg)) / 
+    wb = (sign*lambda_1_-wbz) /
+         ((beta_ + sqrt(wbg)) /
           alpha_ + lambda_2_);
-  }  
+  }
   /*********************************************************
    *  latent factor                                        *
    *********************************************************/
   index_t aligned_k = model.get_aligned_k();
-  index_t align0 = model.get_aligned_k() * 
+  index_t align0 = model.get_aligned_k() *
                    model.GetAuxiliarySize();
   __m128 XMMpg = _mm_set1_ps(pg);
   __m128 XMMalpha = _mm_set1_ps(alpha_);
@@ -442,7 +452,7 @@ void FMScore::calc_grad_ftrl(const SparseRow* row,
         if (sign * z_value <= lambda_1_) {
           *(w+i) = 0;
         } else {
-          *(w+i) = (sign*lambda_1_-z_value) / 
+          *(w+i) = (sign*lambda_1_-z_value) /
               ((beta_ + sqrt(*(wg+i))) / alpha_ + lambda_2_);
         }
       }
