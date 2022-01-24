@@ -41,7 +41,12 @@ void Predictor::Predict() {
     if (tmp == 0) { break; }
     if (tmp != out.size()) { out.resize(tmp); }
     loss_->Predict(matrix, *model_, out);
-    if (reader_->has_label()) {
+	for (auto i: out)
+		std::cout << "?:"<< i << ' ' << '\n';
+
+	
+
+	if (reader_->has_label()) {
       loss_->Evaluate(out, matrix->Y);
     }
     if (sigmoid_) {

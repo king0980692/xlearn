@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 // Copyright (c) 2018 by contributors. All Rights Reserved.
 //
@@ -24,6 +25,12 @@ This file is the implementation of FMScore class.
 #include "src/base/math.h"
 
 namespace xLearn {
+	void print128_num(__m128 var)
+	{
+		float val[8];
+		memcpy(val, &var, sizeof(val));
+		printf("%f \n",  val[0]+ val[1]+ val[2]+ val[3]);
+	}
 
 // y = sum( (V_i*V_j)(x_i * x_j) )
 // Using SSE to accelerate vector operation.
@@ -33,7 +40,10 @@ real_t FMScore::CalcScore(const SparseRow* row,
   /*********************************************************
    *  linear term and bias term                            *
    *********************************************************/
+   std::cout << "norm : "<< norm <<std::endl; 
   real_t sqrt_norm = sqrt(norm);
+  
+  std::cout << "sqrt norm : "<< sqrt_norm <<std::endl; 
   real_t *w = model.GetParameter_w();
   index_t num_feat = model.GetNumFeature();
   real_t t = 0;
@@ -43,11 +53,22 @@ real_t FMScore::CalcScore(const SparseRow* row,
     index_t feat_id = iter->feat_id;
     // To avoid unseen feature in Prediction
     if (feat_id >= num_feat) continue;
+
+	std::cout << "feat_val : " << iter->feat_val << " , " <<   w[feat_id*aux_size] <<"\n";	
     t += (iter->feat_val * w[feat_id*aux_size] * sqrt_norm);
   }
+
+  
+  std::cout << "t : " << t << "\n" ;
+  	   
   // bias
   w = model.GetParameter_b();
   t += w[0];
+
+  
+  std::cout << "add bias " << w[0] << ", and t : " << t << "\n" ;
+  
+
   /*********************************************************
    *  latent factor                                        *
    *********************************************************/
@@ -55,12 +76,15 @@ real_t FMScore::CalcScore(const SparseRow* row,
   index_t align0 = model.get_aligned_k() * aux_size;
   std::vector<real_t> sv(aligned_k, 0);
   real_t* s = sv.data();
+
+
   for (SparseRow::const_iterator iter = row->begin();
        iter != row->end(); ++iter) {
     index_t j1 = iter->feat_id;
     // To avoid unseen feature in Prediction
     if (j1 >= num_feat) continue;
     real_t v1 = iter->feat_val;
+	std::cout << "v1 " << v1 << "\n"; 
     real_t *w = model.GetParameter_v() + j1 * align0;
     __m128 XMMv = _mm_set1_ps(v1*norm);
     for (index_t d = 0; d < aligned_k; d += kAlign) {
@@ -68,8 +92,13 @@ real_t FMScore::CalcScore(const SparseRow* row,
       __m128 const XMMw = _mm_load_ps(w+d);
       XMMs = _mm_add_ps(XMMs, _mm_mul_ps(XMMw, XMMv));
       _mm_store_ps(s+d, XMMs);
+	  std::cout << "s " << s[0] << "\n" ;
+	  
+	    std::cout << "xmms\n";
+	  print128_num(XMMs);	   
     }
   }
+
   __m128 XMMt = _mm_set1_ps(0.0f);
   for (SparseRow::const_iterator iter = row->begin();
        iter != row->end(); ++iter) {
@@ -78,21 +107,43 @@ real_t FMScore::CalcScore(const SparseRow* row,
     if (j1 >= num_feat) continue;
     real_t v1 = iter->feat_val;
     real_t *w = model.GetParameter_v() + j1 * align0;
+	
+	
     __m128 XMMv = _mm_set1_ps(v1*norm);
     for (index_t d = 0; d < aligned_k; d += kAlign) {
       __m128 XMMs = _mm_load_ps(s+d);
       __m128 XMMw = _mm_load_ps(w+d);
       __m128 XMMwv = _mm_mul_ps(XMMw, XMMv);
-      XMMt = _mm_add_ps(XMMt,
+
+	  //std::cout << "xmmw\n";
+	  //print128_num(XMMw);
+
+
+	  XMMt = _mm_add_ps(XMMt,
          _mm_mul_ps(XMMwv, _mm_sub_ps(XMMs, XMMwv)));
-    }
+	  	
+	}
+	std::cout << "XMMT 1\n" ;
+	print128_num(XMMt);
   }
+
   XMMt = _mm_hadd_ps(XMMt, XMMt);
   XMMt = _mm_hadd_ps(XMMt, XMMt);
+  std::cout << "XMMT 2\n" ;
+  print128_num(XMMt);
+
   real_t t_all;
   _mm_store_ss(&t_all, XMMt);
   t_all *= 0.5;
+
+  std::cout << "t_all : " << t_all << "\n" ;
+  
+
   t_all += t;
+
+
+  std::cout << "fm score : " << t_all << "\n" ;
+  
   return t_all;
 }
 

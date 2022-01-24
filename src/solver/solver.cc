@@ -53,7 +53,7 @@ void Solver::print_logo() const {
                     "     \\ \\/ / |    / _ \\/ _` | '__| '_ \\ \n"
                     "      >  <| |___|  __/ (_| | |  | | | |\n"
                     "     /_/\\_\\_____/\\___|\\__,_|_|  |_| |_|\n\n"
-                    "        xLearn   -- 0.44 Version --\n"
+                    "        xLearn   -- Leon Version --\n"
 "----------------------------------------------------------------------------------------------\n"
 "\n";
   Color::Modifier green(Color::FG_GREEN);
@@ -116,6 +116,7 @@ Metric* Solver::create_metric() {
 
 // Initialize Solver
 void Solver::Initialize(int argc, char* argv[]) {
+	printf("from Solver init with argv \n");
   //  Print logo
   print_logo();
   // Check and parse command line arguments
@@ -134,6 +135,7 @@ void Solver::Initialize(int argc, char* argv[]) {
 // given hyper-parameters. This function will be 
 // used for python API.
 void Solver::Initialize(HyperParam& hyper_param) {
+	printf("from Solver init with hyperparameter\n");
   // Print logo
   print_logo();
   // Check the arguments
@@ -414,6 +416,7 @@ void Solver::init_predict() {
    *  Read model file                                      *
    *********************************************************/
   Color::print_action("Load model ...");
+
   CHECK_NE(hyper_param_.model_file.empty(), true);
   Color::print_info(
     StringPrintf("Load model from %s",
@@ -613,6 +616,7 @@ void Solver::start_prediction_work() {
   // Predict and write output
   pdc.Predict();
   this->out_ = pdc.GetResult();
+
 }
 
 /******************************************************************************

@@ -159,6 +159,15 @@ class Modifier {
 };
 
 // [Warning] blablabla ...
+inline void print_debug(const std::string &out) {
+  Color::Modifier mag(Color::FG_MAGENTA);
+  Color::Modifier bold(Color::BOLD);
+  Color::Modifier reset(Color::RESET);
+  std::cout << mag << bold << "[ DEBUG		] "
+            << out << reset << std::endl;
+}
+
+
 inline void print_warning(const std::string &out) {
   Color::Modifier mag(Color::FG_MAGENTA);
   Color::Modifier bold(Color::BOLD);
