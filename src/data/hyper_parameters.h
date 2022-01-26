@@ -35,6 +35,9 @@ struct HyperParam {
 //------------------------------------------------------------------------------
 // Basic parameters for current task
 //------------------------------------------------------------------------------
+
+  bool predict_pairs = false;	
+
   /* Train or Predict.
   True for train, and false for predict. */
   bool is_train = true;

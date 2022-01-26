@@ -27,6 +27,8 @@ This file is the implementation of the Predictor class.
 
 namespace xLearn {
 
+
+
 // Given a pre-trained model and test data, the predictor
 // will return the prediction output
 void Predictor::Predict() {
@@ -38,13 +40,14 @@ void Predictor::Predict() {
   loss_->Reset();
   for (;;) {
     index_t tmp = reader_->Samples(matrix);
+
     if (tmp == 0) { break; }
     if (tmp != out.size()) { out.resize(tmp); }
     loss_->Predict(matrix, *model_, out);
 	for (auto i: out)
 		std::cout << "?:"<< i << ' ' << '\n';
 
-	
+		
 
 	if (reader_->has_label()) {
       loss_->Evaluate(out, matrix->Y);

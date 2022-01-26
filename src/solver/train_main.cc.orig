@@ -27,26 +27,25 @@ This file is the entry for training of the xLearn.
 // The pre-defined main function
 //------------------------------------------------------------------------------
 
-int main(int argc, char* argv[])
-{
-    Timer timer;
-    timer.tic();
+int main(int argc, char* argv[]) {
+  Timer timer;
+  timer.tic();
 
-    xLearn::Solver solver;
+  xLearn::Solver solver;
 
-    // set hyper_param is_train=true
-    solver.SetTrain();
+  // set hyper_param is_train=true
+  solver.SetTrain();
+  
+  solver.Initialize(argc, argv);
+  //solver.StartWork();
 
-    solver.Initialize(argc, argv);
-    //solver.StartWork();
+  solver.Clear();
 
-    solver.Clear();
+  Color::print_info(
+    StringPrintf("Total time cost: %.2f (sec)", 
+    timer.toc()), 
+    NOT_IMPORTANT_MSG
+  );
 
-    Color::print_info(
-        StringPrintf("Total time cost: %.2f (sec)",
-                     timer.toc()),
-        NOT_IMPORTANT_MSG
-    );
-
-    return 0;
+  return 0;
 }

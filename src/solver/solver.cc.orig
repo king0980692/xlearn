@@ -226,16 +226,16 @@ void Solver::init_train()
     {
         threadNumber = hyper_param_.thread_number;
     }
-
+	
     pool_ = new ThreadPool(threadNumber);
 
 
-    Color::print_info(
+	Color::print_info(
         StringPrintf("xLearn uses %i threads for training task.",
                      threadNumber)
     );
 
-    /*********************************************************
+	/*********************************************************
      *  Initialize Reader                                    *
      *********************************************************/
     Timer timer;
@@ -355,7 +355,7 @@ void Solver::init_train()
         {
             int tmp = matrix->MaxFeat();
 
-            // Constrain the Max feat id
+			// Constrain the Max feat id
             if (tmp > max_feat)
             {
                 max_feat = tmp;
@@ -373,32 +373,32 @@ void Solver::init_train()
         reader_[i]->Reset();
     }
 
-    // num_feat = max_feat + 1 (including the zero)
+	// num_feat = max_feat + 1 (including the zero)
     hyper_param_.num_feature = max_feat + 1;
 
-    // Check overflow:
+	// Check overflow:
     // INT_MAX +  = 0
 
-    if (hyper_param_.num_feature == 0)
+	if (hyper_param_.num_feature == 0)
     {
         Color::print_error("Feature index is too large (overflow).");
         LOG(FATAL) << "Feature index is too large (overflow).";
     }
-
+	
     LOG(INFO) << "Number of feature: " << hyper_param_.num_feature;
 
-    Color::print_info(
+	Color::print_info(
         StringPrintf("Number of Feature: %d",
                      hyper_param_.num_feature)
     );
 
-    if (hyper_param_.score_func.compare("ffm") == 0)
+	if (hyper_param_.score_func.compare("ffm") == 0)
     {
         hyper_param_.num_field = max_field + 1;
 
-        LOG(INFO) << "Number of field: " << hyper_param_.num_field;
+		LOG(INFO) << "Number of field: " << hyper_param_.num_field;
 
-        Color::print_info(
+		Color::print_info(
             StringPrintf("Number of Field: %d",
                          hyper_param_.num_field)
         );
@@ -408,16 +408,16 @@ void Solver::init_train()
                      timer.toc())
     );
 
-
+	
     /*********************************************************
      *  Initialize Model                                     *
      *********************************************************/
-    timer.reset();
+	timer.reset();
     timer.tic();
 
-    Color::print_action("Initialize model ...");
+	Color::print_action("Initialize model ...");
 
-    // Initialize parameters from reader
+	// Initialize parameters from reader
     if (hyper_param_.pre_model_file.empty())
     {
         model_ = new Model();
@@ -459,7 +459,7 @@ void Solver::init_train()
 
 
 
-
+	
     /*********************************************************
      *  Initialize score function                            *
      *********************************************************/
@@ -474,7 +474,7 @@ void Solver::init_train()
     LOG(INFO) << "Initialize score function.";
 
 
-    /*********************************************************
+	/*********************************************************
      *  Initialize loss function                             *
      *********************************************************/
     loss_ = create_loss();
@@ -484,7 +484,7 @@ void Solver::init_train()
     LOG(INFO) << "Initialize loss function.";
 
 
-    /*********************************************************
+	/*********************************************************
      *  Init metric                                          *
      *********************************************************/
     metric_ = create_metric();
@@ -682,9 +682,6 @@ void Solver::start_train_work()
         trainer.CVTrain();
         Color::print_action("Finish Cross-Validation");
     }
-
-
-	
     /******************************************************************************
      * Original training without cross-validation                                 *
      ******************************************************************************/
