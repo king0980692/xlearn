@@ -73,7 +73,9 @@ void Solver::print_logo() const
 Reader* Solver::create_reader()
 {
     Reader* reader;
-    std::string str = hyper_param_.from_file ? hyper_param_.on_disk ? "disk" : "memory" : "dmatrix";
+    std::string str = hyper_param_.from_file ? (hyper_param_.on_disk ? "disk" : "memory" ) : "dmatrix";
+
+	std::cout << "create reader : " << str.c_str() << std::endl;
     reader = CREATE_READER(str.c_str());
     if (reader == nullptr)
     {
@@ -242,6 +244,9 @@ void Solver::init_train()
     timer.tic();
     Color::print_action("Read Problem ...");
     LOG(INFO) << "Start to init Reader";
+
+
+	
     // Split file
     if (hyper_param_.from_file)
     {
@@ -257,6 +262,9 @@ void Solver::init_train()
     }
     // Get the Reader list
     int num_reader = 0;
+
+
+	// entry point is from command line
     if (hyper_param_.from_file)
     {
         std::vector<std::string> file_list;
@@ -283,18 +291,34 @@ void Solver::init_train()
         }
         LOG(INFO) << "Number of Reader: " << num_reader;
         reader_.resize(num_reader, nullptr);
+
+
+		;
         // Create Reader
         for (int i = 0; i < num_reader; ++i)
         {
-            reader_[i] = create_reader();
+
+			// according the hyper_param create the reader
+			// e.g.
+			// 		In memory reader
+			//		On disk reader
+			
+			printf("Create %d-th reader \n", i);
+
+			reader_[i] = create_reader();
             reader_[i]->SetBlockSize(hyper_param_.block_size);
             reader_[i]->SetSeed(hyper_param_.seed);
-            if (hyper_param_.bin_out == false)
+
+			if (hyper_param_.bin_out == false)
             {
                 reader_[i]->SetNoBin();
             }
-            reader_[i]->Initialize(file_list[i]);
-            if (!hyper_param_.on_disk)
+
+			
+			// after initialize the reader file has been converted into dmatrix and also bin out
+			reader_[i]->Initialize(file_list[i]);
+
+			if (!hyper_param_.on_disk)
             {
                 reader_[i]->SetShuffle(true);
             }
@@ -309,6 +333,9 @@ void Solver::init_train()
             LOG(INFO) << "Init Reader: " << file_list[i];
         }
     }
+
+	
+	// entry point is from python 
     else
     {
         num_reader += 1;  // training dataset
@@ -344,6 +371,9 @@ void Solver::init_train()
             }
         }
     }
+
+
+	
     /*********************************************************
      *  Read problem                                         *
      *********************************************************/

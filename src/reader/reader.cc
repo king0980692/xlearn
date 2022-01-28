@@ -156,8 +156,10 @@ void InmemReader::Initialize(const std::string& filename)
 {
     CHECK_NE(filename.empty(), true)
     filename_ = filename;
-    Color::print_info("First check if the text file has been already "
-                      "converted to binary format.");
+    Color::print_info(
+		StringPrintf("First check if the text file (%s) has been already "
+                      "converted to binary format.", filename.c_str())
+    );
     // HashBinary() will read the first two hash value
     // and then check it whether equal to the hash value generated
     // by HashFile() function from current txt file.
@@ -178,6 +180,9 @@ void InmemReader::Initialize(const std::string& filename)
                          "file to binary file.",
                          filename_.c_str())
         );
+
+		std::cout << "block size : " << block_size_ << "MB\n";
+		
         // Allocate memory for block
         try
         {
@@ -252,7 +257,8 @@ void InmemReader::init_from_txt()
 {
     // Init parser_
     parser_ = CreateParser(check_file_format().c_str());
-	
+
+	printf("has lable ? : %d\n", has_label_);	
     if (has_label_) parser_->setLabel(true);
     else parser_->setLabel(false);
 
@@ -290,9 +296,14 @@ void InmemReader::init_from_txt()
 
 		// After Parser, the origin txt file will transform into Dmatrix:data_buf		
         parser_->Parse(block_, ret, data_buf_, false);
-		std::cout << "After parse : \n" << block_ << "\n"; 
 
 	}
+
+	// ==============================================
+	// serialize the DMatrix into bin               =
+	// ==============================================
+	std::cout << "hash 1 : " << HashFile(filename_, true) << "\n" 
+			<< "hash 2 : " << HashFile(filename_, false) << "\n";
     data_buf_.SetHash(HashFile(filename_, true),
                       HashFile(filename_, false));
 	
@@ -323,7 +334,9 @@ index_t InmemReader::Samples(DMatrix* &matrix)
 {
 	std::cout << "This is Sample from InMemReader\n";
 	std::cout << "row_length : " <<  data_buf_.row_length << "\n";
-    for (int i = 0; i < num_samples_; ++i)
+
+	// iterate the dmatrix
+	for (int i = 0; i < num_samples_; ++i)
     {
         if (pos_ >= data_buf_.row_length)
         {
